@@ -70,7 +70,7 @@ Catalog/schema/table pattern used by config:
 
 See [`src/clinical_lakehouse/config/settings.py`](src/clinical_lakehouse/config/settings.py).
 
-## Impact highlights
+## Resume-ready impact highlights
 - Built a **4-source clinical data migration** reference architecture using Databricks medallion design.
 - Implemented **incremental Delta MERGE framework** using hash-based change detection.
 - Delivered **entity resolution + reconciliation layer** to improve finance traceability.
