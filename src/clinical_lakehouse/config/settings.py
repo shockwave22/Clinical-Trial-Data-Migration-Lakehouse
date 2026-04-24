@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class LakehouseConfig:
-    catalog: str = "ct_lakehouse_dev"
+    catalog: str = "clinical_migration_dev"
     bronze_schema: str = "bronze"
     silver_schema: str = "silver"
     gold_schema: str = "gold"
@@ -14,16 +14,9 @@ class LakehouseConfig:
         return f"{self.catalog}.{layer}.{entity}"
 
 
-SOURCE_TABLE_MAP = {
-    "oncore_studies": ("bronze", "oncore_studies"),
-    "oncore_protocols": ("bronze", "oncore_protocols"),
-    "oncore_sites": ("bronze", "oncore_sites"),
-    "oncore_investigators": ("bronze", "oncore_investigators"),
-    "reli_contracts": ("bronze", "reli_contracts"),
-    "reli_amendments": ("bronze", "reli_amendments"),
-    "reli_milestones": ("bronze", "reli_milestones"),
-    "gp_invoices": ("bronze", "gp_invoices"),
-    "gp_payments": ("bronze", "gp_payments"),
-    "gp_outstanding_ar": ("bronze", "gp_outstanding_ar"),
-    "sponsor_master": ("bronze", "sponsor_master"),
+BRONZE_RAW_TABLES = {
+    "oncore": "clinical_migration_dev.bronze.oncore_study_raw",
+    "relisource": "clinical_migration_dev.bronze.relisource_contract_raw",
+    "great_plains": "clinical_migration_dev.bronze.gp_invoice_raw",
+    "sponsor_master": "clinical_migration_dev.bronze.sponsor_master_raw",
 }

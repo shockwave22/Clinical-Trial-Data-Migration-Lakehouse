@@ -64,11 +64,23 @@ Detailed architecture and diagrams:
 
 ## Unity Catalog-ready naming convention
 Catalog/schema/table pattern used by config:
-- `ct_lakehouse_dev.bronze.oncore_studies`
-- `ct_lakehouse_dev.silver.contracts`
-- `ct_lakehouse_dev.gold.netsuite_invoice_export`
+- `clinical_migration_dev.bronze.oncore_study_raw`
+- `clinical_migration_dev.bronze.relisource_contract_raw`
+- `clinical_migration_dev.bronze.gp_invoice_raw`
+- `clinical_migration_dev.bronze.sponsor_master_raw`
 
 See [`src/clinical_lakehouse/config/settings.py`](src/clinical_lakehouse/config/settings.py).
+
+
+## Silver transformation outputs
+Standardized Silver tables produced by notebook `02_silver_conformance.py`:
+- `clinical_migration_dev.silver.silver_study`
+- `clinical_migration_dev.silver.silver_contract`
+- `clinical_migration_dev.silver.silver_invoice`
+- `clinical_migration_dev.silver.silver_sponsor`
+- `clinical_migration_dev.silver.silver_site`
+
+Rejected rows are written to quarantine tables under `clinical_migration_dev.silver_quarantine.*` with `invalid_reason`.
 
 ## Resume-ready impact highlights
 - Built a **4-source clinical data migration** reference architecture using Databricks medallion design.
