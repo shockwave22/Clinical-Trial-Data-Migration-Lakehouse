@@ -1,0 +1,11 @@
+flowchart LR
+    A[OnCore CTMS\nStudies/Protocols/Sites/Investigators] --> B[Bronze Delta]
+    C[ReliSource Contracts\nContracts/Amendments/Milestones] --> B
+    D[Great Plains\nInvoices/Payments/Outstanding AR] --> B
+    E[Sponsor Master\nHierarchy/Billing Accounts] --> B
+
+    B --> F[Silver Delta\nStandardized + Deduped + Linked]
+    F --> G[Gold Delta\nReconciliation Mart]
+    F --> H[Gold Delta\nNetSuite Export Tables]
+    G --> I[Finance Reconciliation Dashboard]
+    H --> J[NetSuite Import]
