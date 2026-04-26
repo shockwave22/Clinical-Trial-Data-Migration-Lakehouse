@@ -1,0 +1,4 @@
+invoice_id,invoice_number,contract_name,protocol_no,sponsor_external_id,invoice_amount,paid_amount,outstanding_amount,invoice_date,payment_status
+INV-0001,GP-10001,ACME LUNG 2026,P-1001,SPN-001,120000.0,60000.0,60000.0,2026-01-01,Partially Paid
+INV-0002,GP-10002,NW-CARDIO-2026,P-2200,SPN-002,90000.0,90000.0,0.0,2026-01-03,Paid
+INV-0003,GP-10003,Global Trial Neuro 330,P-3300,SPN-003,45000.0,10000.0,35000.0,2025-12-20,Partially Paid
