@@ -61,6 +61,7 @@ Detailed architecture and diagrams:
    - `notebooks/01_bronze_ingestion.py`
    - `notebooks/02_silver_conformance.py`
    - `notebooks/03_gold_netsuite_export.py`
+   - `notebooks/04_entity_resolution.py`
 
 ## Unity Catalog-ready naming convention
 Catalog/schema/table pattern used by config:
@@ -82,6 +83,16 @@ Standardized Silver tables produced by notebook `02_silver_conformance.py`:
 
 Rejected rows are written to quarantine tables under `clinical_migration_dev.silver_quarantine.*` with `invalid_reason`.
 
+
+## Gold NetSuite canonical outputs
+- `clinical_migration_dev.gold.gold_netsuite_customer_master`
+- `clinical_migration_dev.gold.gold_netsuite_project_master`
+- `clinical_migration_dev.gold.gold_netsuite_contract_master`
+- `clinical_migration_dev.gold.gold_netsuite_invoice_header`
+- `clinical_migration_dev.gold.gold_netsuite_invoice_line`
+- `clinical_migration_dev.gold.gold_netsuite_open_ar`
+- `clinical_migration_dev.gold.gold_migration_audit_summary`
+
 ## Resume-ready impact highlights
 - Built a **4-source clinical data migration** reference architecture using Databricks medallion design.
 - Implemented **incremental Delta MERGE framework** using hash-based change detection.
@@ -89,3 +100,11 @@ Rejected rows are written to quarantine tables under `clinical_migration_dev.sil
 - Produced **NetSuite-ready gold exports** and auditable data quality controls.
 
 See full metrics in [`docs/runbooks/resume_project_summary.md`](docs/runbooks/resume_project_summary.md).
+
+
+## Entity resolution crosswalk outputs
+- `clinical_migration_dev.silver.silver_entity_crosswalk`
+- `clinical_migration_dev.silver.silver_sponsor_crosswalk`
+- `clinical_migration_dev.silver.silver_study_contract_crosswalk`
+
+Entity resolution uses hierarchical matching (external ID, protocol, contract, study, fuzzy fallback) and outputs confidence scores.
