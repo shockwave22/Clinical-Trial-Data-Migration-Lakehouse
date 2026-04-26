@@ -63,7 +63,6 @@ Detailed architecture and diagrams:
    - `notebooks/03_gold_netsuite_export.py`
    - `notebooks/04_entity_resolution.py`
    - `notebooks/06_delta_load_processing.ipynb`
-   - `notebooks/07_reconciliation_dashboard.ipynb`
 
 ## Unity Catalog-ready naming convention
 Catalog/schema/table pattern used by config:
@@ -119,19 +118,3 @@ Per-batch NetSuite delta files are written to:
 - `exports/netsuite/contract_delta/`
 - `exports/netsuite/invoice_delta/`
 - `exports/netsuite/open_ar_delta/`
-
-
-## Reconciliation reporting
-- Framework documentation: `docs/reconciliation_framework.md`
-- Notebook: `notebooks/07_reconciliation_dashboard.ipynb`
-- Output table: `clinical_migration_dev.gold.gold_reconciliation_dashboard`
-
-
-## Deployment assets
-- Databricks Asset Bundle: `resources/databricks.yml`
-- Workflows definition: `resources/jobs.yml`
-- Permissions placeholder: `resources/permissions.yml`
-- Environment variables template: `resources/env/.env.example`
-- Environment configs: `resources/config/dev.yml`, `resources/config/test.yml`, `resources/config/prod.yml`
-
-See `docs/deployment_guide.md` for local PySpark run, Databricks notebook run, and DAB deployment instructions.
