@@ -62,6 +62,8 @@ Detailed architecture and diagrams:
    - `notebooks/02_silver_conformance.py`
    - `notebooks/03_gold_netsuite_export.py`
    - `notebooks/04_entity_resolution.py`
+   - `notebooks/06_delta_load_processing.ipynb`
+   - `notebooks/07_reconciliation_dashboard.ipynb`
 
 ## Unity Catalog-ready naming convention
 Catalog/schema/table pattern used by config:
@@ -108,3 +110,28 @@ See full metrics in [`docs/runbooks/resume_project_summary.md`](docs/runbooks/re
 - `clinical_migration_dev.silver.silver_study_contract_crosswalk`
 
 Entity resolution uses hierarchical matching (external ID, protocol, contract, study, fuzzy fallback) and outputs confidence scores.
+
+
+## Incremental delta exports
+Per-batch NetSuite delta files are written to:
+- `exports/netsuite/customer_delta/`
+- `exports/netsuite/project_delta/`
+- `exports/netsuite/contract_delta/`
+- `exports/netsuite/invoice_delta/`
+- `exports/netsuite/open_ar_delta/`
+
+
+## Reconciliation reporting
+- Framework documentation: `docs/reconciliation_framework.md`
+- Notebook: `notebooks/07_reconciliation_dashboard.ipynb`
+- Output table: `clinical_migration_dev.gold.gold_reconciliation_dashboard`
+
+
+## Deployment assets
+- Databricks Asset Bundle: `resources/databricks.yml`
+- Workflows definition: `resources/jobs.yml`
+- Permissions placeholder: `resources/permissions.yml`
+- Environment variables template: `resources/env/.env.example`
+- Environment configs: `resources/config/dev.yml`, `resources/config/test.yml`, `resources/config/prod.yml`
+
+See `docs/deployment_guide.md` for local PySpark run, Databricks notebook run, and DAB deployment instructions.
