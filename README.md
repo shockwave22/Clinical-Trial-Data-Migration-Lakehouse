@@ -83,6 +83,16 @@ Standardized Silver tables produced by notebook `02_silver_conformance.py`:
 
 Rejected rows are written to quarantine tables under `clinical_migration_dev.silver_quarantine.*` with `invalid_reason`.
 
+
+## Gold NetSuite canonical outputs
+- `clinical_migration_dev.gold.gold_netsuite_customer_master`
+- `clinical_migration_dev.gold.gold_netsuite_project_master`
+- `clinical_migration_dev.gold.gold_netsuite_contract_master`
+- `clinical_migration_dev.gold.gold_netsuite_invoice_header`
+- `clinical_migration_dev.gold.gold_netsuite_invoice_line`
+- `clinical_migration_dev.gold.gold_netsuite_open_ar`
+- `clinical_migration_dev.gold.gold_migration_audit_summary`
+
 ## Resume-ready impact highlights
 - Built a **4-source clinical data migration** reference architecture using Databricks medallion design.
 - Implemented **incremental Delta MERGE framework** using hash-based change detection.
