@@ -1,0 +1,4 @@
+contract_id,contract_name,study_name,protocol_no,sponsor_external_id,site_code,contract_status,contract_value,effective_date,amendment_no
+CNT-9001,ACME-LUNG-2026,LUNG-101,P-1001,SPN-001,NYC01,Active,750000.0,2025-01-01,0
+CNT-9002,NW_CARDIO_2026,CARDIO-220,P-2200,SPN-002,BOS02,Active,500000.0,2024-11-01,1
+CNT-9003,Global Trial Neuro 330,NEURO-330,P-3300,SPN-003,SFO03,Closed,315000.0,2023-02-01,2
