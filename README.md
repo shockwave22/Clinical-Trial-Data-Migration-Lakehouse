@@ -1,144 +1,229 @@
-# Clinical Trial Data Migration Lakehouse (Databricks Portfolio Project)
+# Clinical Trial Data Migration Lakehouse
 
-A production-style **Databricks + Delta Lake** project that demonstrates how clinical trial operational and financial data can be migrated from multiple source systems and conformed into **NetSuite-ready target tables**.
+An end-to-end Databricks + Delta Lake project that migrates fragmented clinical trial operations and finance data into a unified, NetSuite-ready model.
 
-## Why this project matters (plain-English business story)
-Clinical trials are managed across many tools that do not naturally agree with each other:
-- **OnCore CTMS** tracks studies, protocols, sites, and investigators.
-- **ReliSource Contracts** tracks contracts, amendments, and milestones.
-- **Great Plains** tracks invoices, payments, and outstanding accounts receivable.
-- **Sponsor Master** tracks sponsor hierarchy and billing accounts.
+## 1) Business problem
+Clinical research organizations often run critical workflows across disconnected systems. Study operations teams, contract teams, and finance teams each maintain their own records, which creates frequent cross-system issues:
+- studies cannot be reliably tied to active contracts,
+- sponsor hierarchies differ by source,
+- invoice and AR balances are hard to reconcile against protocol activity,
+- downstream ERP loads require manual data cleanup.
 
-Finance and operations teams need a single trusted view to answer questions like:
-- Which sponsor owes us money for which study?
-- Are invoices aligned to the latest contract amendment?
-- Which site activity has not yet been billed?
+This project demonstrates a practical migration pattern to consolidate those systems into an auditable lakehouse pipeline with traceable transformations, incremental processing, and export-ready target tables.
 
-This project builds a medallion pipeline (Bronze/Silver/Gold) to standardize and link records using critical keys:
-`Contract Name`, `Study Name`, `Protocol Number`, `External IDs`, `Sponsor Name`, and `Site Code`.
+## 2) Source systems explanation
+The pipeline ingests four source domains:
+- **OnCore CTMS**: study lifecycle and site operations (study, protocol, site, investigator).
+- **ReliSource Contracts**: contract administration (contracts, amendments, values, status).
+- **Great Plains**: financial transactions (invoices, paid amounts, open AR).
+- **Sponsor Master**: sponsor reference hierarchy and billing account mappings.
 
-## Architecture at a glance
-- **Bronze**: raw ingestion via Auto Loader-style logic into Delta tables.
-- **Silver**: standardized, deduplicated, incrementally merged entities.
-- **Gold**: business-ready marts for reconciliation and NetSuite export.
-- **Incremental logic**: record hash + Delta `MERGE` upsert patterns.
-- **Entity matching**: fuzzy-safe key normalization and deterministic fallback joins.
-- **Data quality**: required field checks, referential checks, and threshold gates.
-- **Reconciliation**: billed vs collected vs outstanding metrics.
+Core linking fields across systems include `sponsor_external_id`, `protocol_no`, `study_name`, `contract_name`, and `site_code`.
 
-Detailed architecture and diagrams:
-- [`docs/architecture/solution_architecture.md`](docs/architecture/solution_architecture.md)
-- [`architecture/architecture_diagram.mmd`](architecture/architecture_diagram.mmd)
+## 3) Clinical trial data relationships
+At a high level:
+- A **Sponsor** funds one or more **Studies**.
+- A **Study** is governed by a **Protocol** and can run at multiple **Sites**.
+- A **Contract** is established for study work (and may be amended over time).
+- **Invoices** are billed against contracts/protocol activity.
+- **Open AR** is calculated from invoice amount minus paid amount.
 
-## Repository structure
-```text
-.
-├── architecture/                 # diagram source files
-├── data/
-│   ├── raw/                      # source landing data by system
-│   ├── generated/                # synthetic datasets
-│   └── exports/                  # NetSuite-ready output extracts
-├── docs/
-│   ├── architecture/             # architecture and design docs
-│   ├── mappings/                 # source-to-target field mapping
-│   └── runbooks/                 # operational runbooks
-├── notebooks/                    # Databricks notebook-style Python scripts
-├── scripts/                      # helper scripts (mock data generation)
-├── src/clinical_lakehouse/       # PySpark package
-└── tests/                        # pytest unit tests
+These relationships are not always clean in source systems, so the pipeline applies standardization + entity resolution before producing canonical Gold outputs.
+
+## 4) Architecture diagram (Mermaid)
+```mermaid
+flowchart LR
+  subgraph Sources[Source Systems]
+    O[OnCore CTMS]
+    R[ReliSource Contracts]
+    G[Great Plains]
+    S[Sponsor Master]
+  end
+
+  O --> B
+  R --> B
+  G --> B
+  S --> B
+
+  subgraph Bronze[Bronze Layer]
+    B[(Raw Delta Tables + Ingestion Metadata)]
+  end
+
+  B --> Q
+
+  subgraph Silver[Silver Layer]
+    Q[(Standardized, Deduplicated, Validated Tables)]
+    X[(Entity Resolution Crosswalks)]
+  end
+
+  Q --> H
+  X --> H
+
+  subgraph Gold[Gold Layer]
+    H[(NetSuite Canonical Tables)]
+    A[(Migration Audit + Reconciliation Dashboard)]
+  end
+
+  H --> E[NetSuite Delta Exports]
 ```
 
-## Quick start
-1. Generate mock source data:
-   ```bash
-   python scripts/generate_mock_data.py
-   ```
-2. Run unit tests:
-   ```bash
-   pytest -q
-   ```
-3. Import notebook scripts into Databricks workspace and execute in order:
-   - `notebooks/01_bronze_ingestion.py`
-   - `notebooks/02_silver_conformance.py`
-   - `notebooks/03_gold_netsuite_export.py`
-   - `notebooks/04_entity_resolution.py`
-   - `notebooks/06_delta_load_processing.ipynb`
-   - `notebooks/07_reconciliation_dashboard.ipynb`
+## 5) Medallion architecture explanation
+### Bronze
+- Reads batch files from `data/sample_source/{system}/batch_date=YYYY-MM-DD/`.
+- Preserves raw source columns.
+- Adds ingestion metadata (`source_system`, `source_file_name`, `ingestion_timestamp`, `load_id`, `batch_date`, `record_hash`).
+- Writes raw Delta tables using Unity Catalog-style naming.
 
-## Unity Catalog-ready naming convention
-Catalog/schema/table pattern used by config:
-- `clinical_migration_dev.bronze.oncore_study_raw`
-- `clinical_migration_dev.bronze.relisource_contract_raw`
-- `clinical_migration_dev.bronze.gp_invoice_raw`
-- `clinical_migration_dev.bronze.sponsor_master_raw`
+### Silver
+- Standardizes types and formatting (text normalization, date parsing, currency normalization).
+- Applies quality checks and sends invalid records to quarantine tables.
+- Deduplicates by business keys.
+- Builds conformed entities (`silver_study`, `silver_contract`, `silver_invoice`, `silver_sponsor`, `silver_site`) and resolution crosswalks.
 
-See [`src/clinical_lakehouse/config/settings.py`](src/clinical_lakehouse/config/settings.py).
+### Gold
+- Produces NetSuite-oriented canonical outputs for customer, project, contract, invoice, and open AR.
+- Generates migration audit summaries and reconciliation outputs for operational monitoring.
 
+## 6) Incremental load strategy
+The incremental framework uses record-level hashes and Delta merge semantics:
+1. Generate deterministic `record_hash` from business-relevant fields.
+2. Compare incoming vs current state to classify `insert`, `update`, `delete`, `no_change`.
+3. Apply Delta `MERGE` into current Silver/Gold tables.
+4. Maintain SCD Type 2-style history for sponsor, study, and contract entities.
+5. Generate per-batch NetSuite delta exports under:
+   - `exports/netsuite/customer_delta/`
+   - `exports/netsuite/project_delta/`
+   - `exports/netsuite/contract_delta/`
+   - `exports/netsuite/invoice_delta/`
+   - `exports/netsuite/open_ar_delta/`
 
-## Silver transformation outputs
-Standardized Silver tables produced by notebook `02_silver_conformance.py`:
-- `clinical_migration_dev.silver.silver_study`
-- `clinical_migration_dev.silver.silver_contract`
-- `clinical_migration_dev.silver.silver_invoice`
-- `clinical_migration_dev.silver.silver_sponsor`
-- `clinical_migration_dev.silver.silver_site`
+## 7) Entity matching strategy
+Entity resolution follows a deterministic-first hierarchy:
+1. exact `sponsor_external_id`
+2. exact `protocol_no`
+3. normalized exact `contract_name`
+4. normalized exact `study_name`
+5. fuzzy fallback for sponsor/contract naming variation
 
-Rejected rows are written to quarantine tables under `clinical_migration_dev.silver_quarantine.*` with `invalid_reason`.
+The model emits:
+- `sponsor_match_score`
+- `study_match_score`
+- `contract_match_score`
+- `overall_match_confidence`
 
+Output crosswalks:
+- `silver_entity_crosswalk`
+- `silver_sponsor_crosswalk`
+- `silver_study_contract_crosswalk`
 
-## Gold NetSuite canonical outputs
-- `clinical_migration_dev.gold.gold_netsuite_customer_master`
-- `clinical_migration_dev.gold.gold_netsuite_project_master`
-- `clinical_migration_dev.gold.gold_netsuite_contract_master`
-- `clinical_migration_dev.gold.gold_netsuite_invoice_header`
-- `clinical_migration_dev.gold.gold_netsuite_invoice_line`
-- `clinical_migration_dev.gold.gold_netsuite_open_ar`
-- `clinical_migration_dev.gold.gold_migration_audit_summary`
+## 8) NetSuite target model
+Canonical Gold outputs:
+- `gold_netsuite_customer_master` (Sponsor -> NetSuite Customer)
+- `gold_netsuite_project_master` (Study/Protocol -> NetSuite Project)
+- `gold_netsuite_contract_master` (ReliSource Contract -> NetSuite Contract)
+- `gold_netsuite_invoice_header` (Great Plains invoice header)
+- `gold_netsuite_invoice_line` (invoice line-level representation)
+- `gold_netsuite_open_ar` (outstanding balances)
+- `gold_migration_audit_summary` (load and migration observability)
 
-## Resume-ready impact highlights
-- Built a **4-source clinical data migration** reference architecture using Databricks medallion design.
-- Implemented **incremental Delta MERGE framework** using hash-based change detection.
-- Delivered **entity resolution + reconciliation layer** to improve finance traceability.
-- Produced **NetSuite-ready gold exports** and auditable data quality controls.
+Detailed field-level mapping reference: `docs/source_to_target_mapping.md`.
 
-See full metrics in [`docs/runbooks/resume_project_summary.md`](docs/runbooks/resume_project_summary.md).
+## 9) Data quality and reconciliation
+### Data quality checks (examples)
+- `protocol_no` required for study records.
+- `sponsor_external_id` required where applicable.
+- `invoice_amount >= paid_amount`.
+- `outstanding_amount = invoice_amount - paid_amount`.
+- `contract_value > 0`.
 
+### Reconciliation metrics
+- source vs target record counts,
+- contract value source vs target,
+- invoice totals source vs target,
+- open AR totals source vs target,
+- rejected and duplicate counts,
+- match accuracy,
+- load runtime,
+- insert/update/delete counts.
 
-## Entity resolution crosswalk outputs
-- `clinical_migration_dev.silver.silver_entity_crosswalk`
-- `clinical_migration_dev.silver.silver_sponsor_crosswalk`
-- `clinical_migration_dev.silver.silver_study_contract_crosswalk`
+See `docs/reconciliation_framework.md` and `notebooks/07_reconciliation_dashboard.ipynb`.
 
-Entity resolution uses hierarchical matching (external ID, protocol, contract, study, fuzzy fallback) and outputs confidence scores.
+## 10) How to run locally
+### Prerequisites
+- Python 3.10+
+- Java 8/11+ (for PySpark)
 
+### Steps
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip pytest pyspark delta-spark
+python scripts/generate_mock_data.py
+PYTHONPATH=src:. pytest -q
+```
 
-## Incremental delta exports
-Per-batch NetSuite delta files are written to:
-- `exports/netsuite/customer_delta/`
-- `exports/netsuite/project_delta/`
-- `exports/netsuite/contract_delta/`
-- `exports/netsuite/invoice_delta/`
-- `exports/netsuite/open_ar_delta/`
+To execute pipeline components locally, run notebook-style scripts as Python modules in sequence (Spark environment required):
+1. `notebooks/01_bronze_ingestion.py`
+2. `notebooks/02_silver_conformance.py`
+3. `notebooks/04_entity_resolution.py`
+4. `notebooks/03_gold_netsuite_export.py`
+5. `notebooks/06_delta_load_processing.ipynb`
+6. `notebooks/07_reconciliation_dashboard.ipynb`
 
+## 11) How to run on Databricks
+### Notebook execution path
+- Import notebooks from `/notebooks` into a Databricks workspace.
+- Attach to a cluster with Delta Lake support.
+- Execute notebooks in pipeline order (Bronze -> Silver -> Entity Resolution -> Gold -> Delta Processing -> Reconciliation).
 
-## Reconciliation reporting
-- Framework documentation: `docs/reconciliation_framework.md`
-- Notebook: `notebooks/07_reconciliation_dashboard.ipynb`
-- Output table: `clinical_migration_dev.gold.gold_reconciliation_dashboard`
+### Databricks Asset Bundles path
+Project assets are in:
+- `resources/databricks.yml`
+- `resources/jobs.yml`
+- `resources/permissions.yml`
+- `resources/config/{dev,test,prod}.yml`
+- `resources/env/.env.example`
 
+Typical flow:
+```bash
+databricks bundle validate
+databricks bundle deploy -t dev
+databricks bundle run clinical_migration_pipeline -t dev
+```
 
-## Deployment assets
-- Databricks Asset Bundle: `resources/databricks.yml`
-- Workflows definition: `resources/jobs.yml`
-- Permissions placeholder: `resources/permissions.yml`
-- Environment variables template: `resources/env/.env.example`
-- Environment configs: `resources/config/dev.yml`, `resources/config/test.yml`, `resources/config/prod.yml`
+## 12) Bullet examples
+- Built a multi-source Databricks lakehouse pipeline that unifies clinical operations and financial systems into NetSuite-ready canonical datasets.
+- Implemented hash-based incremental merge logic with SCD2 history patterns to support controlled inserts, updates, deletes, and repeatable delta exports.
+- Designed deterministic + fuzzy entity resolution across sponsor, study, protocol, and contract records with confidence scoring and measurable accuracy.
+- Added auditable data quality gates, quarantine handling, and reconciliation reporting to validate migration completeness and financial alignment.
 
-See `docs/deployment_guide.md` for local PySpark run, Databricks notebook run, and DAB deployment instructions.
+## 13) Architecture decisions
+- **PySpark-first implementation** for scalable transformations and Databricks-native execution.
+- **Delta Lake + MERGE patterns** for ACID guarantees and incremental upsert support.
+- **Medallion layering** to separate raw ingestion from conformance and business consumption.
+- **Unity Catalog-style naming** to support governance-ready table organization.
+- **Deterministic matching before fuzzy logic** to maximize precision and explainability.
+- **Quarantine strategy** to isolate bad records without blocking valid data movement.
 
+## 14) Future enhancements
+- Add schema registry + explicit schema evolution controls per source feed.
+- Introduce CDC connectors for near-real-time source capture.
+- Add expectation frameworks (for example Great Expectations/Deequ) with SLA alerting.
+- Expand fuzzy matching with phonetic encodings + vector similarity.
+- Add contract milestone and revenue recognition logic to Gold finance models.
+- Add orchestration observability (lineage, alerting, cost/perf dashboards).
 
-## Test expected outputs
-Sample expected outputs for validation tests are stored in `tests/expected/`.
+---
 
-## CI
-GitHub Actions workflow: `.github/workflows/tests.yml` runs mock data generation and `pytest -q` on push/PR.
+## Repository map
+```text
+.
+├── architecture/
+├── data/sample_source/
+├── docs/
+├── notebooks/
+├── resources/
+├── scripts/
+├── src/clinical_lakehouse/
+└── tests/
+```
