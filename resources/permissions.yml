@@ -1,0 +1,8 @@
+# Placeholder permissions file for Databricks Asset Bundle deployments.
+# Replace principals and permission levels per workspace security standards.
+resources:
+  jobs:
+    clinical_migration_pipeline:
+      permissions:
+        - user_name: your.name@company.com
+          level: CAN_MANAGE

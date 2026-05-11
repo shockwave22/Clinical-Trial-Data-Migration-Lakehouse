@@ -1,0 +1,2 @@
+invoice_id,invoice_number,contract_name,protocol_no,sponsor_external_id,invoice_amount,paid_amount,outstanding_amount,invoice_date,payment_status
+INV-0006,GP-10006,RARE 550 MASTER,,SPN-004,15000.0,0.0,15000.0,2026-02-15,Unpaid

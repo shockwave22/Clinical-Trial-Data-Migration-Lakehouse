@@ -1,0 +1,4 @@
+study_id,study_name,protocol_no,sponsor_external_id,site_code,principal_investigator,therapeutic_area,study_status,start_date,end_date
+STUDY-1001,LUNG-101,P-1001,SPN-001,NYC01,Dr. Maria Chen,Oncology,Active,2025-01-10,2027-12-31
+STUDY-2200,CARDIO-220,P-2200,SPN-002,BOS02,Dr. Ethan Brooks,Cardiology,Active,2024-11-01,2026-11-15
+STUDY-3300,NEURO-330,P-3300,SPN-003,SFO03,Dr. Priya Raman,Neurology,Closed,2023-02-20,2025-12-15

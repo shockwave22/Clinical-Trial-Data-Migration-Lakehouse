@@ -1,0 +1,58 @@
+bundle:
+  name: clinical-migration-lakehouse
+
+include:
+  - resources/jobs.yml
+  - resources/permissions.yml
+
+variables:
+  DATABRICKS_HOST:
+    description: Databricks workspace URL
+    default: ${env.DATABRICKS_HOST}
+  DATABRICKS_TOKEN:
+    description: Databricks PAT token
+    default: ${env.DATABRICKS_TOKEN}
+  CATALOG:
+    description: Unity Catalog name
+    default: clinical_migration_dev
+  BRONZE_SCHEMA:
+    default: bronze
+  SILVER_SCHEMA:
+    default: silver
+  GOLD_SCHEMA:
+    default: gold
+  REPO_ROOT:
+    description: Workspace repo or volume path
+    default: /Workspace/Users/${workspace.current_user.userName}/clinical-migration-lakehouse
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: ${var.DATABRICKS_HOST}
+    variables:
+      CATALOG: clinical_migration_dev
+      BRONZE_SCHEMA: bronze
+      SILVER_SCHEMA: silver
+      GOLD_SCHEMA: gold
+
+  test:
+    mode: production
+    workspace:
+      host: ${var.DATABRICKS_HOST}
+    variables:
+      CATALOG: clinical_migration_test
+      BRONZE_SCHEMA: bronze
+      SILVER_SCHEMA: silver
+      GOLD_SCHEMA: gold
+
+  prod:
+    mode: production
+    workspace:
+      host: ${var.DATABRICKS_HOST}
+    variables:
+      CATALOG: clinical_migration_prod
+      BRONZE_SCHEMA: bronze
+      SILVER_SCHEMA: silver
+      GOLD_SCHEMA: gold

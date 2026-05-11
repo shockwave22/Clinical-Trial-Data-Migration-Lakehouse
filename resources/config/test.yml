@@ -1,0 +1,6 @@
+environment: test
+catalog: clinical_migration_test
+bronze_schema: bronze
+silver_schema: silver
+gold_schema: gold
+data_root: dbfs:/Volumes/clinical_migration_test

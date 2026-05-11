@@ -1,0 +1,4 @@
+sponsor_external_id,sponsor_name,sponsor_parent,billing_account_id,netsuite_customer_external_id,sponsor_status
+SPN-001,Acme Biopharma,Acme Holdings,BA-1001,NS-CUST-ACME,Active
+SPN-002,Northwind Pharmaceuticals,Northwind Group,BA-2001,NS-CUST-NW,Active
+SPN-003,Global Trial Therapeutics,GTT Parent,BA-3001,NS-CUST-GTT,Active

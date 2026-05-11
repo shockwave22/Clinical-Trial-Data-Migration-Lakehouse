@@ -1,0 +1,6 @@
+environment: dev
+catalog: clinical_migration_dev
+bronze_schema: bronze
+silver_schema: silver
+gold_schema: gold
+data_root: dbfs:/Volumes/clinical_migration_dev
